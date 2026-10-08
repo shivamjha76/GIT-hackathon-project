@@ -437,21 +437,23 @@ export default function App() {
 function OverviewView({ stats, onSelectFinding }) {
   if (!stats) return <div className="text-slate-400 py-12 text-center">Loading overview metrics...</div>;
 
-  const totalRepos = stats.total_repositories || 6;
-  const openFindings = stats.open_findings || 18;
-  const critical = stats.critical_findings || 4;
-  const foundToday = stats.found_today || 7;
+  const totalRepos = stats.total_repositories ?? 0;
+  const openFindings = stats.open_findings ?? 0;
+  const critical = stats.critical_findings ?? 0;
+  const foundToday = stats.found_today ?? 0;
 
-  const bySev = stats.by_severity || { Critical: 4, High: 6, Medium: 5, Low: 3 };
+  const bySev = stats.by_severity || { Critical: 0, High: 0, Medium: 0, Low: 0 };
   const dailyData = stats.findings_per_day || [
-    { day: 'Mon', count: 1 },
-    { day: 'Tue', count: 2 },
-    { day: 'Wed', count: 1.5 },
-    { day: 'Thu', count: 4 },
-    { day: 'Fri', count: 3 },
-    { day: 'Sat', count: 5 },
-    { day: 'Sun', count: 6.5 }
+    { day: 'Mon', count: 0 },
+    { day: 'Tue', count: 0 },
+    { day: 'Wed', count: 0 },
+    { day: 'Thu', count: 0 },
+    { day: 'Fri', count: 0 },
+    { day: 'Sat', count: 0 },
+    { day: 'Sun', count: 0 }
   ];
+
+  const maxVal = Math.max(...dailyData.map(d => d.count), 1);
 
   return (
     <div className="space-y-6">
@@ -476,7 +478,9 @@ function OverviewView({ stats, onSelectFinding }) {
           <div>
             <span className="text-xs font-medium text-slate-400 block mb-1">Open findings</span>
             <span className="text-3xl font-bold text-white tracking-tight">{openFindings}</span>
-            <span className="text-xs text-amber-400/90 block mt-1">+5 since yesterday</span>
+            <span className="text-xs text-slate-400 block mt-1">
+              {openFindings > 0 ? 'Active exposed credentials' : 'No leaks detected'}
+            </span>
           </div>
           <div className="w-10 h-10 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
             <AlertTriangle className="w-5 h-5" />
@@ -487,8 +491,12 @@ function OverviewView({ stats, onSelectFinding }) {
         <div className="bg-[#131823] border border-[#1e2638] rounded-xl p-5 flex items-start justify-between">
           <div>
             <span className="text-xs font-medium text-slate-400 block mb-1">Critical</span>
-            <span className="text-3xl font-bold text-red-400 tracking-tight">{critical}</span>
-            <span className="text-xs text-red-400/80 block mt-1">Revoke immediately</span>
+            <span className={`text-3xl font-bold tracking-tight ${critical > 0 ? 'text-red-400' : 'text-slate-300'}`}>
+              {critical}
+            </span>
+            <span className="text-xs text-slate-400 block mt-1">
+              {critical > 0 ? 'Revoke immediately' : 'Zero critical exposures'}
+            </span>
           </div>
           <div className="w-10 h-10 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
             <Flame className="w-5 h-5" />
@@ -500,7 +508,9 @@ function OverviewView({ stats, onSelectFinding }) {
           <div>
             <span className="text-xs font-medium text-slate-400 block mb-1">Found today</span>
             <span className="text-3xl font-bold text-white tracking-tight">{foundToday}</span>
-            <span className="text-xs text-emerald-400/90 block mt-1">Last alert 2 min ago</span>
+            <span className="text-xs text-slate-400 block mt-1">
+              {foundToday > 0 ? 'Detected in last 24h' : 'No new leaks today'}
+            </span>
           </div>
           <div className="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
             <Clock className="w-5 h-5" />
@@ -515,8 +525,7 @@ function OverviewView({ stats, onSelectFinding }) {
           <h3 className="text-sm font-semibold text-slate-200 mb-6">Findings per day</h3>
           <div className="h-52 flex items-end justify-between px-4 pt-4 border-b border-[#1f283d] pb-2">
             {dailyData.map((item, idx) => {
-              const maxVal = 7;
-              const heightPct = Math.min(Math.max((item.count / maxVal) * 100, 15), 95);
+              const heightPct = item.count > 0 ? Math.min(Math.max((item.count / maxVal) * 100, 20), 95) : 6;
               const isLast = idx === dailyData.length - 1;
               return (
                 <div key={item.day} className="flex flex-col items-center space-y-2 group flex-1">
@@ -527,7 +536,11 @@ function OverviewView({ stats, onSelectFinding }) {
                     style={{ height: `${heightPct}%` }}>
                     <div
                       className={`w-full h-full rounded-t-sm transition ${
-                        isLast ? 'bg-emerald-500 group-hover:bg-emerald-400' : 'bg-blue-600 group-hover:bg-blue-500'
+                        item.count === 0
+                          ? 'bg-[#1b2333]'
+                          : isLast
+                          ? 'bg-emerald-500 group-hover:bg-emerald-400'
+                          : 'bg-blue-600 group-hover:bg-blue-500'
                       }`}
                     />
                   </div>
@@ -546,32 +559,29 @@ function OverviewView({ stats, onSelectFinding }) {
             <div className="relative w-36 h-36 flex items-center justify-center">
               <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
                 <circle cx="50" cy="50" r="38" stroke="#1c2436" strokeWidth="12" fill="none" />
-                {/* Critical (Red) */}
-                <circle
-                  cx="50" cy="50" r="38"
-                  stroke="#ef4444" strokeWidth="12" fill="none"
-                  strokeDasharray="238"
-                  strokeDashoffset="180"
-                  strokeLinecap="round"
-                />
-                {/* High (Orange) */}
-                <circle
-                  cx="50" cy="50" r="38"
-                  stroke="#f97316" strokeWidth="12" fill="none"
-                  strokeDasharray="238"
-                  strokeDashoffset="120"
-                />
-                {/* Medium (Amber) */}
-                <circle
-                  cx="50" cy="50" r="38"
-                  stroke="#eab308" strokeWidth="12" fill="none"
-                  strokeDasharray="238"
-                  strokeDashoffset="80"
-                />
+                {openFindings > 0 && (
+                  <>
+                    {/* Critical */}
+                    <circle
+                      cx="50" cy="50" r="38"
+                      stroke="#ef4444" strokeWidth="12" fill="none"
+                      strokeDasharray="238"
+                      strokeDashoffset={238 - (bySev.Critical / Math.max(openFindings, 1)) * 238}
+                      strokeLinecap="round"
+                    />
+                    {/* High */}
+                    <circle
+                      cx="50" cy="50" r="38"
+                      stroke="#f97316" strokeWidth="12" fill="none"
+                      strokeDasharray="238"
+                      strokeDashoffset={238 - (bySev.High / Math.max(openFindings, 1)) * 238}
+                    />
+                  </>
+                )}
               </svg>
               <div className="absolute text-center">
                 <span className="text-2xl font-bold text-white block">{openFindings}</span>
-                <span className="text-xs text-slate-400 block -mt-1">open</span>
+                <span className="text-xs text-slate-400 block -mt-1">{openFindings === 0 ? 'all clear' : 'open'}</span>
               </div>
             </div>
 
@@ -580,22 +590,22 @@ function OverviewView({ stats, onSelectFinding }) {
               <div className="flex items-center space-x-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
                 <span className="text-slate-300">Critical</span>
-                <span className="text-slate-400 font-mono ml-auto">{bySev.Critical || 4}</span>
+                <span className="text-slate-400 font-mono ml-auto">{bySev.Critical ?? 0}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-orange-500" />
                 <span className="text-slate-300">High</span>
-                <span className="text-slate-400 font-mono ml-auto">{bySev.High || 6}</span>
+                <span className="text-slate-400 font-mono ml-auto">{bySev.High ?? 0}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
                 <span className="text-slate-300">Medium</span>
-                <span className="text-slate-400 font-mono ml-auto">{bySev.Medium || 5}</span>
+                <span className="text-slate-400 font-mono ml-auto">{bySev.Medium ?? 0}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-slate-500" />
                 <span className="text-slate-300">Low</span>
-                <span className="text-slate-400 font-mono ml-auto">{bySev.Low || 3}</span>
+                <span className="text-slate-400 font-mono ml-auto">{bySev.Low ?? 0}</span>
               </div>
             </div>
           </div>
@@ -622,43 +632,57 @@ function OverviewView({ stats, onSelectFinding }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#1b2233]">
-              {(stats.recent_findings || []).map((f) => {
-                const sevCfg = SEVERITY_STYLES[f.severity] || SEVERITY_STYLES.Medium;
-                const SevIcon = sevCfg.icon;
-                return (
-                  <tr
-                    key={f.id}
-                    onClick={() => onSelectFinding(f)}
-                    className="hover:bg-[#182030] cursor-pointer transition group"
-                  >
-                    <td className="py-3.5 px-6">
-                      <span className={`inline-flex items-center space-x-1.5 px-2 py-0.5 rounded text-[11px] font-medium ${sevCfg.badge}`}>
-                        <SevIcon className="w-3 h-3" />
-                        <span>{f.severity}</span>
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-6">
-                      <span className="text-blue-400 hover:underline flex items-center space-x-1.5 font-medium">
-                        <FolderGit2 className="w-3.5 h-3.5 text-slate-400" />
-                        <span>{f.repo_name}</span>
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-6 font-mono text-slate-300">
-                      {f.file_path}:{f.line_no}
-                    </td>
-                    <td className="py-3.5 px-6 text-slate-300 flex items-center space-x-1.5">
-                      <KeyRound className="w-3.5 h-3.5 text-slate-400" />
-                      <span>{f.secret_type}</span>
-                    </td>
-                    <td className="py-3.5 px-6 font-mono text-slate-300 tracking-wider">
-                      {f.masked_value}
-                    </td>
-                    <td className="py-3.5 px-6 text-right text-slate-400 whitespace-nowrap">
-                      {timeAgo(f.detected_at)}
-                    </td>
-                  </tr>
-                );
-              })}
+              {(stats.recent_findings || []).length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-12 text-center text-slate-400">
+                    <div className="flex flex-col items-center justify-center space-y-2">
+                      <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                        <Shield className="w-5 h-5" />
+                      </div>
+                      <p className="font-semibold text-slate-200 text-sm">All Monitored Repositories are Clean</p>
+                      <p className="text-xs text-slate-500">No active secrets or tokens detected in watched student projects.</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                (stats.recent_findings || []).map((f) => {
+                  const sevCfg = SEVERITY_STYLES[f.severity] || SEVERITY_STYLES.Medium;
+                  const SevIcon = sevCfg.icon;
+                  return (
+                    <tr
+                      key={f.id}
+                      onClick={() => onSelectFinding(f)}
+                      className="hover:bg-[#182030] cursor-pointer transition group"
+                    >
+                      <td className="py-3.5 px-6">
+                        <span className={`inline-flex items-center space-x-1.5 px-2 py-0.5 rounded text-[11px] font-medium ${sevCfg.badge}`}>
+                          <SevIcon className="w-3 h-3" />
+                          <span>{f.severity}</span>
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-6">
+                        <span className="text-blue-400 hover:underline flex items-center space-x-1.5 font-medium">
+                          <FolderGit2 className="w-3.5 h-3.5 text-slate-400" />
+                          <span>{f.repo_name}</span>
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-6 font-mono text-slate-300">
+                        {f.file_path}:{f.line_no}
+                      </td>
+                      <td className="py-3.5 px-6 text-slate-300 flex items-center space-x-1.5">
+                        <KeyRound className="w-3.5 h-3.5 text-slate-400" />
+                        <span>{f.secret_type}</span>
+                      </td>
+                      <td className="py-3.5 px-6 font-mono text-slate-300 tracking-wider">
+                        {f.masked_value}
+                      </td>
+                      <td className="py-3.5 px-6 text-right text-slate-400 whitespace-nowrap">
+                        {timeAgo(f.detected_at)}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
@@ -1050,10 +1074,21 @@ function RepositoriesView({
       </div>
 
       {/* REPOSITORIES GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {repositories.map((repo) => {
-          const breakdown = repo.severity_breakdown || { Critical: 0, High: 0, Medium: 0, Low: 0 };
-          const openCount = repo.open_findings_count || 0;
+      {repositories.length === 0 ? (
+        <div className="bg-[#131823] border border-[#1e2638] rounded-xl p-12 text-center space-y-3">
+          <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 mx-auto">
+            <FolderGit2 className="w-6 h-6" />
+          </div>
+          <h3 className="text-base font-bold text-white">No Repositories Under Watch</h3>
+          <p className="text-xs text-slate-400 max-w-md mx-auto">
+            Add a public student GitHub repository above (format: <code>username/repository</code>) to start real-time commit surveillance and Discord alerts.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {repositories.map((repo) => {
+            const breakdown = repo.severity_breakdown || { Critical: 0, High: 0, Medium: 0, Low: 0 };
+            const openCount = repo.open_findings_count || 0;
 
           // Status Badge format
           let statusBadge = (
@@ -1158,7 +1193,8 @@ function RepositoriesView({
             </div>
           );
         })}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1220,13 +1256,23 @@ function SyntheticModal({ onClose, repositories, onSuccess }) {
         <div className="space-y-3 text-xs">
           <div>
             <label className="text-slate-400 block mb-1">Target Repository</label>
-            <select
-              value={targetRepo}
-              onChange={(e) => setTargetRepo(e.target.value)}
-              className="w-full bg-[#0c1017] border border-[#1e2638] rounded-lg p-2 text-slate-200"
-            >
-              {repositories.map(r => <option key={r.id} value={r.full_name}>{r.full_name}</option>)}
-            </select>
+            {repositories.length > 0 ? (
+              <select
+                value={targetRepo}
+                onChange={(e) => setTargetRepo(e.target.value)}
+                className="w-full bg-[#0c1017] border border-[#1e2638] rounded-lg p-2 text-slate-200"
+              >
+                {repositories.map(r => <option key={r.id} value={r.full_name}>{r.full_name}</option>)}
+              </select>
+            ) : (
+              <input
+                type="text"
+                value={targetRepo}
+                onChange={(e) => setTargetRepo(e.target.value)}
+                placeholder="e.g. college-club/demo-repo"
+                className="w-full bg-[#0c1017] border border-[#1e2638] rounded-lg p-2 text-slate-200 font-mono text-xs"
+              />
+            )}
           </div>
 
           <div>
