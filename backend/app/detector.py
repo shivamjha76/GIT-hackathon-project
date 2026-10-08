@@ -106,7 +106,7 @@ REGEX_RULES = [
     ),
     RegexRule(
         name="Stripe secret key",
-        pattern=r"\b(sk_live_[0-9A-Za-z]{24,})\b",
+        pattern=r"\b(sk_(?:live|test)_[0-9A-Za-z]{24,})\b",
         severity="Critical",
         default_confidence="High",
         remediation=REMEDIATION_GUIDES["Stripe secret key"]
