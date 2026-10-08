@@ -15,6 +15,7 @@ class Repository(Base):
     full_name = Column(String(200), unique=True, index=True, nullable=False)
     description = Column(String(255), default="")
     added_by = Column(String(100), default="student")
+    user_id = Column(String(100), nullable=True, index=True)
     interval_seconds = Column(Integer, default=15)
     last_seen_sha = Column(String(64), nullable=True)
     etag = Column(String(100), nullable=True)
@@ -32,6 +33,7 @@ class Finding(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     repo_id = Column(Integer, ForeignKey("repositories.id"), nullable=False, index=True)
+    user_id = Column(String(100), nullable=True, index=True)
     commit_sha = Column(String(64), nullable=False)
     commit_message = Column(String(255), nullable=True)
     commit_url = Column(String(255), nullable=True)

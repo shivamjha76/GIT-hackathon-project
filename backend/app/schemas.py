@@ -10,6 +10,7 @@ class RepositoryBase(BaseModel):
 class RepositoryCreate(BaseModel):
     repo_url_or_name: str  # Can accept 'owner/repo' or 'https://github.com/owner/repo' or 'username'
     description: Optional[str] = ""
+    user_id: Optional[str] = None
 
 class RepositoryResponse(BaseModel):
     id: int

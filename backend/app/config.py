@@ -6,7 +6,9 @@ load_dotenv()
 
 class Settings(BaseModel):
     APP_NAME: str = "SecretWatch"
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./secretwatch.db")
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://postgres:shivam%400987vam@db.oqzhaswlztjuylauxekq.supabase.co:5432/postgres")
+    SUPABASE_URL: str = os.getenv("SUPABASE_URL", "https://oqzhaswlztjuylauxekq.supabase.co")
+    SUPABASE_ANON_KEY: str = os.getenv("SUPABASE_ANON_KEY", "sb_publishable_Kvh8JBONTLdcM6YyawKLLw_HFAxj5Oa")
     GITHUB_TOKEN: str = os.getenv("GITHUB_TOKEN", "")
     DISCORD_WEBHOOK_URL: str = os.getenv("DISCORD_WEBHOOK_URL", "")
     SLACK_WEBHOOK_URL: str = os.getenv("SLACK_WEBHOOK_URL", "")

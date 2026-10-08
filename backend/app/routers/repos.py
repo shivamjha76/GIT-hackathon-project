@@ -77,6 +77,7 @@ async def add_repository(
         name=name,
         full_name=full_name,
         description=payload.description or f"Monitored repository {full_name}",
+        user_id=payload.user_id,
         status="Idle"
     )
     db.add(repo)

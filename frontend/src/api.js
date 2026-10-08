@@ -12,11 +12,11 @@ export async function fetchRepositories() {
   return res.json();
 }
 
-export async function addRepository(repoUrlOrName, description = "") {
+export async function addRepository(repoUrlOrName, description = "", userId = null) {
   const res = await fetch(`${API_BASE}/repos`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ repo_url_or_name: repoUrlOrName, description })
+    body: JSON.stringify({ repo_url_or_name: repoUrlOrName, description, user_id: userId })
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));

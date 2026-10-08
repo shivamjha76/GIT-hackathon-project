@@ -20,9 +20,14 @@ import {
   ChevronRight,
   MessageSquare,
   Sparkles,
-  Info
+  Info,
+  User,
+  LogIn,
+  LogOut
 } from 'lucide-react';
 import * as api from './api';
+import { supabase } from './supabase';
+import AuthModal from './components/AuthModal';
 
 // Helper for relative time string
 function timeAgo(dateString) {
@@ -89,6 +94,10 @@ export default function App() {
   const [testModalOpen, setTestModalOpen] = useState(false);
   const [syntheticKeyType, setSyntheticKeyType] = useState('AWS key');
 
+  // Supabase Auth State
+  const [user, setUser] = useState(null);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+
   // Load initial data
   const loadData = async () => {
     try {
@@ -113,6 +122,16 @@ export default function App() {
 
   useEffect(() => {
     loadData();
+
+    // Check initial Supabase user
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
     // Live timer tick
     const timer = setInterval(() => {
       setLastScanSecondsAgo(prev => prev + 1);
@@ -122,10 +141,16 @@ export default function App() {
       loadData();
     }, 15000);
     return () => {
+      subscription.unsubscribe();
       clearInterval(timer);
       clearInterval(pollInterval);
     };
   }, []);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+  };
 
   // Handle Global Scan Now
   const handleScanNow = async () => {
@@ -147,7 +172,7 @@ export default function App() {
     setRepoSubmitting(true);
     setRepoError('');
     try {
-      await api.addRepository(newRepoInput.trim());
+      await api.addRepository(newRepoInput.trim(), '', user?.id);
       setNewRepoInput('');
       await loadData();
     } catch (err) {
@@ -299,6 +324,33 @@ export default function App() {
             <Bell className="w-4 h-4" />
           </button>
 
+          {/* User Auth Profile / Sign In */}
+          {user ? (
+            <div className="flex items-center space-x-2 bg-[#171e2c] border border-[#2b3752] rounded-lg px-2.5 py-1">
+              <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px] font-bold">
+                {user.email ? user.email.charAt(0).toUpperCase() : 'U'}
+              </div>
+              <span className="text-xs text-slate-300 font-medium max-w-[120px] truncate">
+                {user.email}
+              </span>
+              <button
+                onClick={handleSignOut}
+                title="Sign out"
+                className="text-slate-500 hover:text-red-400 transition ml-1"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setAuthModalOpen(true)}
+              className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#1c2436] hover:bg-[#263148] border border-[#2b3752] text-slate-200 hover:text-white flex items-center space-x-1.5 transition"
+            >
+              <LogIn className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Sign In</span>
+            </button>
+          )}
+
           {/* Scan Now Button */}
           <button
             onClick={handleScanNow}
@@ -368,6 +420,13 @@ export default function App() {
           onSuccess={loadData}
         />
       )}
+
+      {/* SUPABASE AUTHENTICATION MODAL */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onAuthSuccess={(u) => setUser(u)}
+      />
     </div>
   );
 }
