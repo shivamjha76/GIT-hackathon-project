@@ -23,11 +23,13 @@ import {
   Info,
   User,
   LogIn,
-  LogOut
+  LogOut,
+  Home
 } from 'lucide-react';
 import * as api from './api';
 import { supabase } from './supabase';
 import AuthModal from './components/AuthModal';
+import LandingPage from './components/LandingPage';
 
 // Helper for relative time string
 function timeAgo(dateString) {
@@ -69,6 +71,7 @@ const SEVERITY_STYLES = {
 };
 
 export default function App() {
+  const [currentView, setCurrentView] = useState('landing'); // 'landing' | 'dashboard'
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'findings' | 'repositories'
   const [stats, setStats] = useState(null);
   const [repositories, setRepositories] = useState([]);
@@ -242,18 +245,44 @@ export default function App() {
   const resolvedFindingsCount = findings.filter(f => f.status === 'resolved').length;
   const fpFindingsCount = findings.filter(f => f.status === 'false_positive').length;
 
+  if (currentView === 'landing') {
+    return (
+      <>
+        <LandingPage
+          onLaunchDashboard={() => setCurrentView('dashboard')}
+          onOpenAuth={() => setAuthModalOpen(true)}
+          user={user}
+        />
+        <AuthModal
+          isOpen={authModalOpen}
+          onClose={() => setAuthModalOpen(false)}
+          onAuthSuccess={(u) => setUser(u)}
+        />
+      </>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#0c1017] text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
       {/* TOP NAVBAR */}
       <header className="border-b border-[#1c2436] bg-[#0f1420]/90 backdrop-blur sticky top-0 z-40 px-6 py-3.5 flex items-center justify-between">
-        <div className="flex items-center space-x-8">
+        <div className="flex items-center space-x-6">
           {/* Logo */}
-          <div className="flex items-center space-x-2.5 cursor-pointer" onClick={() => setActiveTab('overview')}>
+          <div className="flex items-center space-x-2.5 cursor-pointer" onClick={() => setCurrentView('landing')} title="Back to Landing Page">
             <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
               <Shield className="w-5 h-5" />
             </div>
             <span className="font-bold text-lg tracking-tight text-white">SecretWatch</span>
           </div>
+
+          {/* Home button */}
+          <button
+            onClick={() => setCurrentView('landing')}
+            className="px-2.5 py-1.5 rounded-md flex items-center space-x-1.5 text-xs text-slate-400 hover:text-slate-200 hover:bg-[#151c2a] transition"
+          >
+            <Home className="w-3.5 h-3.5" />
+            <span>Home</span>
+          </button>
 
           {/* Navigation Tabs */}
           <nav className="flex items-center space-x-1 text-sm font-medium">
