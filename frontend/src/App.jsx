@@ -256,7 +256,10 @@ export default function App() {
         <AuthModal
           isOpen={authModalOpen}
           onClose={() => setAuthModalOpen(false)}
-          onAuthSuccess={(u) => setUser(u)}
+          onAuthSuccess={(u) => {
+            setUser(u);
+            setCurrentView('dashboard');
+          }}
         />
       </>
     );
